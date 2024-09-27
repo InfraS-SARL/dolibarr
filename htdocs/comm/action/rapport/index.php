@@ -66,11 +66,11 @@ if (!$user->hasRight("agenda", "allactions", "read")) {
  * Actions
  */
 
-if ($action == 'builddoc') {
+if ($action == 'builddoc' && $user->hasRight("agenda", "allactions", "read")) {
 	require_once DOL_DOCUMENT_ROOT.'/core/modules/action/doc/pdf_standard_actions.class.php';
 
 	$cat = new pdf_standard_actions($db, $month, $year);
-	$result = $cat->write_file(0, $langs);
+	$result = $cat->write_file(null, $langs);
 	if ($result < 0) {
 		setEventMessages($cat->error, $cat->errors, 'errors');
 	}
@@ -130,6 +130,7 @@ if ($resql) {
 	print '<input type="hidden" name="sortfield" value="'.$sortfield.'">';
 	print '<input type="hidden" name="sortorder" value="'.$sortorder.'">';
 
+	// @phan-suppress-next-line PhanPluginSuspiciousParamOrder
 	print_barre_liste($langs->trans("EventReports"), $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, '', $num, $nbtotalofrecords, 'title_agenda', 0, '', '', $limit, 0, 0, 1);
 
 	$moreforfilter = '';
@@ -177,7 +178,7 @@ if ($resql) {
 				print '<td class="tdoverflowmax300">';
 				//print '<a data-ajax="false" href="'.DOL_URL_ROOT.'/document.php?page='.$page.'&amp;file='.urlencode($relativepath).'&amp;modulepart=actionsreport">'.img_pdf().'</a>';
 
-				$filearray = array('name'=>basename($file), 'fullname'=>$file, 'type'=>'file');
+				$filearray = array('name' => basename($file), 'fullname' => $file, 'type' => 'file');
 				$out = '';
 
 				// Show file name with link to download

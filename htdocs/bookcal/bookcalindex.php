@@ -44,8 +44,9 @@ if (isset($user->socid) && $user->socid > 0) {
 	$socid = $user->socid;
 }
 
-$max = 5;
 $now = dol_now();
+$NBMAX = getDolGlobalString('MAIN_SIZE_SHORTLIST_LIMIT');
+$max = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT', 5);
 
 
 /*
@@ -62,7 +63,7 @@ $now = dol_now();
 $form = new Form($db);
 $formfile = new FormFile($db);
 
-llxHeader("", $langs->trans("BookCalArea"));
+llxHeader("", $langs->trans("BookCalArea"), '', '', 0, 0, '', '', '', 'mod-bookcal page-index');
 
 print load_fiche_titre($langs->trans("BookCalArea"), '', 'fa-calendar-check');
 
@@ -136,9 +137,6 @@ if ($user->hasRight('bookcal', 'availabilities', 'read') && isModEnabled('bookca
 
 print '</div><div class="fichetwothirdright">';
 
-
-$NBMAX = getDolGlobalString('MAIN_SIZE_SHORTLIST_LIMIT');
-$max = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT');
 
 /* BEGIN MODULEBUILDER LASTMODIFIED MYOBJECT
 // Last modified myobject

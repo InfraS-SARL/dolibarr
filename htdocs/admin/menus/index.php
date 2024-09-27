@@ -202,7 +202,7 @@ $formadmin = new FormAdmin($db);
 $arrayofjs = array('/includes/jquery/plugins/jquerytreeview/jquery.treeview.js', '/includes/jquery/plugins/jquerytreeview/lib/jquery.cookie.js');
 $arrayofcss = array('/includes/jquery/plugins/jquerytreeview/jquery.treeview.css');
 
-llxHeader('', $langs->trans("Menus"), '', '', 0, 0, $arrayofjs, $arrayofcss);
+llxHeader('', $langs->trans("Menus"), '', '', 0, 0, $arrayofjs, $arrayofcss, '', 'mod-admin page-menus_index');
 
 
 print load_fiche_titre($langs->trans("Menus"), '', 'title_setup');
@@ -274,7 +274,8 @@ i.e.: data[]= array (index, parent index, string )
 
 // First the root item of the tree must be declared:
 
-$data[] = array('rowid'=>0, 'fk_menu'=>-1, 'title'=>"racine", 'mainmenu'=>'', 'leftmenu'=>'', 'fk_mainmenu'=>'', 'fk_leftmenu'=>'');
+$data = array();
+$data[] = array('rowid' => 0, 'fk_menu' => -1, 'title' => "racine", 'mainmenu' => '', 'leftmenu' => '', 'fk_mainmenu' => '', 'fk_leftmenu' => '');
 
 // Then all child items must be declared
 
@@ -314,17 +315,17 @@ if ($res) {
 		$buttons .= '<a class="marginleftonly marginrightonly" href="index.php?menu_handler='.$menu_handler_to_search.'&action=up&token='.newToken().'&menuId='.$menu['rowid'].'">'.img_picto("Up", "1uparrow").'</a><a href="index.php?menu_handler='.$menu_handler_to_search.'&action=down&menuId='.$menu['rowid'].'">'.img_picto("Down", "1downarrow").'</a>';
 
 		$data[] = array(
-			'rowid'=>$menu['rowid'],
-			'module'=>$menu['module'],
-			'fk_menu'=>$menu['fk_menu'],
-			'title'=>$titre,
-			'mainmenu'=>$menu['mainmenu'],
-			'leftmenu'=>$menu['leftmenu'],
-			'fk_mainmenu'=>$menu['fk_mainmenu'],
-			'fk_leftmenu'=>$menu['fk_leftmenu'],
-			'position'=>$menu['position'],
-			'entry'=>$entry,
-			'buttons'=>$buttons
+			'rowid' => $menu['rowid'],
+			'module' => $menu['module'],
+			'fk_menu' => $menu['fk_menu'],
+			'title' => $titre,
+			'mainmenu' => $menu['mainmenu'],
+			'leftmenu' => $menu['leftmenu'],
+			'fk_mainmenu' => $menu['fk_mainmenu'],
+			'fk_leftmenu' => $menu['fk_leftmenu'],
+			'position' => $menu['position'],
+			'entry' => $entry,
+			'buttons' => $buttons
 		);
 		$i++;
 	}
@@ -339,8 +340,8 @@ print '<table class="noborder centpercent">';
 
 print '<tr class="liste_titre">';
 print '<td>'.$langs->trans("TreeMenuPersonalized").'</td>';
-print '<td class="right"><div id="iddivjstreecontrol"><a href="#">'.img_picto('', 'folder', 'class="paddingright"').$langs->trans("UndoExpandAll").'</a>';
-print ' | <a href="#">'.img_picto('', 'folder-open', 'class="paddingright"').$langs->trans("ExpandAll").'</a></div></td>';
+print '<td class="right"><div id="iddivjstreecontrol"><a href="#">'.img_picto($langs->trans("UndoExpandAll"), 'folder', 'class="paddingright"').'</a>';
+print ' | <a href="#">'.img_picto($langs->trans("ExpandAll"), 'folder-open', 'class="paddingright"').'</a></div></td>';
 print '</tr>';
 
 print '<tr>';
@@ -378,7 +379,7 @@ if (count($remainingdata)) {
 	print '<tr>';
 	print '<td colspan="2">';
 	foreach ($remainingdata as $datar) {
-		$father = array('rowid'=>$datar['rowid'], 'title'=>"???", 'mainmenu'=>$datar['fk_mainmenu'], 'leftmenu'=>$datar['fk_leftmenu'], 'fk_mainmenu'=>'', 'fk_leftmenu'=>'');
+		$father = array('rowid' => $datar['rowid'], 'title' => "???", 'mainmenu' => $datar['fk_mainmenu'], 'leftmenu' => $datar['fk_leftmenu'], 'fk_mainmenu' => '', 'fk_leftmenu' => '');
 		//print 'Start with rowid='.$datar['rowid'].' mainmenu='.$father ['mainmenu'].' leftmenu='.$father ['leftmenu'].'<br>'."\n";
 		tree_recur($data, $father, 0, 'iddivjstree'.$datar['rowid'], 1, 1);
 	}

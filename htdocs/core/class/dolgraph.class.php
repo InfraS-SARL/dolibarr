@@ -1,6 +1,8 @@
 <?php
-/* Copyright (c) 2003-2006 Rodolphe Quiedeville <rodolphe@quiedeville.org>
- * Copyright (c) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
+/* Copyright (c) 2003-2006  Rodolphe Quiedeville    <rodolphe@quiedeville.org>
+ * Copyright (c) 2004-2015  Laurent Destailleur     <eldy@users.sourceforge.net>
+ * Copyright (C) 2024		MDW						<mdeweerd@users.noreply.github.com>
+ * Copyright (C) 2024		Frédéric France			<frederic.france@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,11 +51,11 @@ class DolGraph
 	public $cssprefix = ''; // To add into css styles
 
 	/**
-	 * @var int|string 		Width of graph. It can be a numeric for pixels or a string like '100%'
+	 * @var int|string 		Width of graph. It can be a numeric for pixels or a string like '100%' or "100px'
 	 */
 	public $width = 380;
 	/**
-	 * @var int 			Height of graph
+	 * @var int|string 	Height of graph. It can be a numeric for pixels or a string like '100%' or "100px'
 	 */
 	public $height = 200;
 
@@ -241,7 +243,7 @@ class DolGraph
 	/**
 	 * Set width
 	 *
-	 * @param 	int|string		$w			Width (Example: 320 or '100%')
+	 * @param 	int|string		$w			Width (Example: 320 or '100%' or '10px')
 	 * @return	void
 	 */
 	public function SetWidth($w)
@@ -440,7 +442,7 @@ class DolGraph
 	/**
 	 * Set height
 	 *
-	 * @param 	int		$h				Height
+	 * @param 	int|string		$h		Height int or '90%' or '10px'
 	 * @return	void
 	 */
 	public function SetHeight($h)
@@ -688,7 +690,7 @@ class DolGraph
 		if ($max != 0) {
 			$max++;
 		}
-		$size = dol_strlen(abs(ceil($max)));
+		$size = dol_strlen((string) abs(ceil($max)));
 		$factor = 1;
 		for ($i = 0; $i < ($size - 1); $i++) {
 			$factor *= 10;
@@ -719,7 +721,7 @@ class DolGraph
 		if ($min != 0) {
 			$min--;
 		}
-		$size = dol_strlen(abs(floor($min)));
+		$size = dol_strlen((string) abs(floor($min)));
 		$factor = 1;
 		for ($i = 0; $i < ($size - 1); $i++) {
 			$factor *= 10;
@@ -754,14 +756,14 @@ class DolGraph
 			$this->error = "Call to draw method was made but SetData was is an empty dataset";
 			dol_syslog(get_class($this) . "::draw " . $this->error, LOG_WARNING);
 		}
-		$call = "draw_" . $this->_library;
+		$call = "draw_" . $this->_library;	// Example "draw_jflot"
 
 		return call_user_func_array(array($this, $call), array($file, $fileurl));
 	}
 
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
-	 * Build a graph using JFlot library. Input when calling this method should be:
+	 * Build a graph into ->stringtoshow using the JFlot library. Input when calling this method should be:
 	 *	$this->data  = array(array(0=>'labelxA',1=>yA),  array('labelxB',yB));
 	 *	$this->data  = array(array(0=>'labelxA',1=>yA1,...,n=>yAn), array('labelxB',yB1,...yBn));   // when there is n series to show for each x
 	 *  $this->data  = array(array('label'=>'labelxA','data'=>yA),  array('labelxB',yB));			// Syntax deprecated
@@ -776,7 +778,7 @@ class DolGraph
 	 * @param	string	$fileurl	Url path to show image if saved onto disk. Never used here.
 	 * @return	void
 	 */
-	private function draw_jflot($file, $fileurl)
+	private function draw_jflot($file, $fileurl) // @phpstan-ignore-line
 	{
 		// phpcs:enable
 		global $langs;
@@ -1063,7 +1065,7 @@ class DolGraph
 	 * @param	string	$fileurl	Url path to show image if saved onto disk. Never used here.
 	 * @return	void
 	 */
-	private function draw_chart($file, $fileurl)
+	private function draw_chart($file, $fileurl) // @phpstan-ignore-line
 	{
 		// phpcs:enable
 		global $langs;
@@ -1102,7 +1104,7 @@ class DolGraph
 			$values = array(); // Array with horizontal y values (specific values of a series) for each abscisse x (with x=0,1,2,...)
 			$series[$i] = "";
 
-			// Fill array $values
+			// Fill array $series from $this->data
 			$x = 0;
 			foreach ($this->data as $valarray) {	// Loop on each x
 				$legends[$x] = (array_key_exists('label', $valarray) ? $valarray['label'] : $valarray[0]);
@@ -1158,12 +1160,12 @@ class DolGraph
 		if (count($this->data) > 20) {
 			$dolxaxisvertical = 'dol-xaxis-vertical';
 		}
-		// No height for the pie grah
+		// No height for the pie graph
 		$cssfordiv = 'dolgraphchart';
 		if (isset($this->type[$firstlot])) {
 			$cssfordiv .= ' dolgraphchar' . $this->type[$firstlot];
 		}
-		$this->stringtoshow .= '<div id="placeholder_'.$tag.'" style="min-height: '.$this->height.(strpos($this->height, '%') > 0 ? '' : 'px').'; max-height: '.(strpos($this->height, '%') > 0 ? $this->height : ($this->height + 100) . 'px').'; width:'.$this->width.(strpos($this->width, '%') > 0 ? '' : 'px').';" class="'.$cssfordiv.' dolgraph'.(empty($dolxaxisvertical) ? '' : ' '.$dolxaxisvertical).(empty($this->cssprefix) ? '' : ' dolgraph'.$this->cssprefix).' center">'."\n";
+		$this->stringtoshow .= '<div id="placeholder_'.$tag.'" style="min-height: '.$this->height.(strpos((string) $this->height, '%') > 0 ? '' : 'px').'; max-height: '.(strpos((string) $this->height, '%') > 0 ? $this->height : ((int) $this->height + 100) . 'px').'; width:'.$this->width.(strpos((string) $this->width, '%') > 0 ? '' : 'px').';" class="'.$cssfordiv.' dolgraph'.(empty($dolxaxisvertical) ? '' : ' '.$dolxaxisvertical).(empty($this->cssprefix) ? '' : ' dolgraph'.$this->cssprefix).' center">'."\n";
 		$this->stringtoshow .= '<canvas id="canvas_'.$tag.'"></canvas></div>'."\n";
 
 		$this->stringtoshow .= '<script nonce="'.getNonce().'" id="' . $tag . '">' . "\n";
@@ -1288,7 +1290,6 @@ class DolGraph
 			$this->stringtoshow .= '],
 					datasets: [';
 			$i = 0;
-			$i = 0;
 			while ($i < $nblot) {	// Loop on each series
 				$color = 'rgb(' . $this->datacolor[$i][0] . ', ' . $this->datacolor[$i][1] . ', ' . $this->datacolor[$i][2] . ')';
 
@@ -1310,11 +1311,7 @@ class DolGraph
 			$type = 'bar';
 			$xaxis = '';
 
-			if (!isset($this->type[$firstlot]) || $this->type[$firstlot] == 'bars') {
-				$type = 'bar';
-			}
 			if (isset($this->type[$firstlot]) && $this->type[$firstlot] == 'horizontalbars') {
-				$type = 'bar';
 				$xaxis = "indexAxis: 'y', ";
 			}
 			if (isset($this->type[$firstlot]) && ($this->type[$firstlot] == 'lines' || $this->type[$firstlot] == 'linesnopoint')) {
@@ -1348,7 +1345,7 @@ class DolGraph
 				$this->stringtoshow .= 'tooltip: { mode: \'nearest\',
 					callbacks: {';
 				if (is_array($this->tooltipsTitles)) {
-					$this->stringtoshow .='
+					$this->stringtoshow .= '
 							title: function(tooltipItem, data) {
 								var tooltipsTitle ='.json_encode($this->tooltipsTitles).'
 								return tooltipsTitle[tooltipItem[0].datasetIndex];
@@ -1360,7 +1357,7 @@ class DolGraph
 								return tooltipslabels[tooltipItem.datasetIndex]
 							}';
 				}
-				$this->stringtoshow .='}},';
+				$this->stringtoshow .= '}},';
 			}
 			$this->stringtoshow .= "}, \n";
 
@@ -1388,7 +1385,7 @@ class DolGraph
 				$this->stringtoshow .= 'tooltips: { mode: \'nearest\',
 					callbacks: {';
 				if (is_array($this->tooltipsTitles)) {
-					$this->stringtoshow .='
+					$this->stringtoshow .= '
 							title: function(tooltipItem, data) {
 								var tooltipsTitle ='.json_encode($this->tooltipsTitles).'
 								return tooltipsTitle[tooltipItem[0].datasetIndex];
@@ -1400,7 +1397,7 @@ class DolGraph
 								return tooltipslabels[tooltipItem.datasetIndex]
 							}';
 				}
-				$this->stringtoshow .='}},';
+				$this->stringtoshow .= '}},';
 			}
 			$this->stringtoshow .= '};';
 			$this->stringtoshow .= '
@@ -1428,6 +1425,7 @@ class DolGraph
 					datasets: [';
 
 			global $theme_datacolor;
+			'@phan-var-force array{0:array{0:int,1:int,2:int},1:array{0:int,1:int,2:int},2:array{0:int,1:int,2:int},3:array{0:int,1:int,2:int}} $theme_datacolor';
 			//var_dump($arrayofgroupslegend);
 			$i = 0;
 			$iinstack = 0;
@@ -1552,7 +1550,7 @@ class DolGraph
 	}
 
 	/**
-	 * Output HTML string to show graph
+	 * Output HTML string ->stringtoshow to show the graph
 	 *
 	 * @param	int|string		$shownographyet    Show graph to say there is not enough data or the message in $shownographyet if it is a string.
 	 * @return	string							   HTML string to show graph

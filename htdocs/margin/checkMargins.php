@@ -19,10 +19,11 @@
  */
 
 /**
- * \file htdocs/margin/checkMargins.php
+ * \file 	htdocs/margin/checkMargins.php
  * \ingroup margin
- * \brief Check margins
+ * \brief 	Check margins
  */
+
 require '../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
@@ -64,6 +65,8 @@ $enddate = dol_mktime(23, 59, 59, GETPOSTINT('enddatemonth'), GETPOSTINT('enddat
 
 $search_ref = GETPOST('search_ref', 'alpha');
 
+$hookmanager->initHooks(array('checkmarginlist'));
+
 // Security check
 $result = restrictedArea($user, 'margins');
 
@@ -73,6 +76,8 @@ if (GETPOST("button_search_x") || GETPOST("button_search")) {
 } elseif (GETPOST("button_updatemagins_x") || GETPOST("button_updatemagins")) {
 	$action = 'update';
 }
+
+$permissiontocreate = $user->hasRight('facture', 'creer');
 
 
 /*
@@ -97,7 +102,7 @@ if (empty($reshook)) {
 	// Selection of new fields
 	include DOL_DOCUMENT_ROOT.'/core/actions_changeselectedfields.inc.php';
 
-	if ($action == 'update') {
+	if ($action == 'update' && $permissiontocreate) {
 		$datapost = $_POST;
 
 		foreach ($datapost as $key => $value) {
@@ -150,9 +155,9 @@ $productstatic = new Product($db);
 
 $form = new Form($db);
 
-$title = $langs->trans("Margins");
+$title = $langs->trans("MarginDetails");
 
-llxHeader('', $title);
+llxHeader('', $title, '', '', 0, 0, '', '', '', 'mod-margin page-checkmargins');
 
 // print load_fiche_titre($text);
 
@@ -190,11 +195,11 @@ print '<table class="border centpercent">';
 
 print '<tr><td class="titlefield">'.$langs->trans('DateStart').' ('.$langs->trans("DateValidation").')</td>';
 print '<td>';
-print $form->selectDate($startdate, 'startdate', '', '', 1, "sel", 1, 1);
+print $form->selectDate($startdate, 'startdate', 0, 0, 1, "sel", 1, 1);
 print '</td>';
 print '<td>'.$langs->trans('DateEnd').' ('.$langs->trans("DateValidation").')</td>';
 print '<td>';
-print $form->selectDate($enddate, 'enddate', '', '', 1, "sel", 1, 1);
+print $form->selectDate($enddate, 'enddate', 0, 0, 1, "sel", 1, 1);
 print '</td>';
 print '<td style="text-align: center;">';
 print '<input type="submit" class="button" value="'.dol_escape_htmltag($langs->trans('Refresh')).'" name="button_search" />';
@@ -248,7 +253,8 @@ if ($result) {
 	$num = $db->num_rows($result);
 
 	print '<br>';
-	print_barre_liste($langs->trans("MarginDetails"), $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, '', $num, $nbtotalofrecords, '', 0, '', '', $limit);
+	// @phan-suppress-next-line PhanPluginSuspiciousParamOrder
+	print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, '', 0, '', '', $limit, 0, 0, 1);
 
 	if (getDolGlobalString('MARGIN_TYPE') == "1") {
 		$labelcostprice = 'BuyingPrice';

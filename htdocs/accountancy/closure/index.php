@@ -1,5 +1,6 @@
 <?php
 /* Copyright (C) 2019-2023  Open-DSI    	    <support@open-dsi.fr>
+ * Copyright (C) 2024		Frédéric France			<frederic.france@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +50,7 @@ if (!$user->hasRight('accounting', 'fiscalyear', 'write')) {
 	accessforbidden();
 }
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $hookmanager->initHooks(array('accountancyclosure'));
 
 $object = new BookKeeping($db);
@@ -123,14 +124,28 @@ if (empty($reshook)) {
 			$separate_auxiliary_account = GETPOST('separate_auxiliary_account', 'aZ09');
 			$generate_bookkeeping_records = GETPOST('generate_bookkeeping_records', 'aZ09');
 
-			$result = $object->closeFiscalPeriod($current_fiscal_period['id'], $new_fiscal_period_id, $separate_auxiliary_account, $generate_bookkeeping_records);
-			if ($result < 0) {
-				setEventMessages($object->error, $object->errors, 'errors');
-			} else {
-				setEventMessages($langs->trans("AccountancyClosureCloseSuccessfully"), null, 'mesgs');
+			$error = 0;
+			if ($generate_bookkeeping_records) {
+				if (!getDolGlobalString('ACCOUNTING_CLOSURE_ACCOUNTING_GROUPS_USED_FOR_BALANCE_SHEET_ACCOUNT')) {
+					$error++;
+					setEventMessages($langs->trans("ErrorModuleSetupNotComplete"), null, 'errors');
+				}
+				if (!getDolGlobalString('ACCOUNTING_CLOSURE_ACCOUNTING_GROUPS_USED_FOR_INCOME_STATEMENT')) {
+					$error++;
+					setEventMessages($langs->trans("ErrorModuleSetupNotComplete"), null, 'errors');
+				}
+			}
 
-				header("Location: " . $_SERVER['PHP_SELF'] . (isset($current_fiscal_period) ? '?fiscal_period_id=' . $current_fiscal_period['id'] : ''));
-				exit;
+			if (!$error) {
+				$result = $object->closeFiscalPeriod($current_fiscal_period['id'], $new_fiscal_period_id, $separate_auxiliary_account, $generate_bookkeeping_records);
+				if ($result < 0) {
+					setEventMessages($object->error, $object->errors, 'errors');
+				} else {
+					setEventMessages($langs->trans("AccountancyClosureCloseSuccessfully"), null, 'mesgs');
+
+					header("Location: " . $_SERVER['PHP_SELF'] . (isset($current_fiscal_period) ? '?fiscal_period_id=' . $current_fiscal_period['id'] : ''));
+					exit;
+				}
 			}
 		} elseif ($action == 'confirm_step_3' && $confirm == "yes") {
 			$inventory_journal_id = GETPOSTINT('inventory_journal_id');
@@ -161,9 +176,9 @@ $formaccounting = new FormAccounting($db);
 
 $title = $langs->trans('Closure');
 
-$help_url ='EN:Module_Double_Entry_Accounting|FR:Module_Comptabilit&eacute;_en_Partie_Double#Cl.C3.B4ture_annuelle';
+$help_url = 'EN:Module_Double_Entry_Accounting|FR:Module_Comptabilit&eacute;_en_Partie_Double#Cl.C3.B4ture_annuelle';
 
-llxHeader('', $title, $help_url);
+llxHeader('', $title, $help_url, '', 0, 0, '', '', '', 'mod-accountancy page-closure-index');
 
 $formconfirm = '';
 
@@ -255,7 +270,7 @@ if (isset($current_fiscal_period)) {
 			'name' => 'date_start',
 			'type' => 'date',
 			'label' => $langs->trans('DateStart'),
-			'value' => dol_time_plus_duree($current_fiscal_period['date_end'], -1, 'm')
+			'value' => dol_time_plus_duree((int) $current_fiscal_period['date_end'], -1, 'm')
 		);
 		$form_question['date_end'] = array(
 			'name' => 'date_end',
@@ -300,7 +315,7 @@ if (!empty($current_fiscal_period)) {
 print load_fiche_titre($langs->trans("Closure") . " - " . $fiscal_period_nav_text, '', 'title_accountancy');
 
 if (empty($current_fiscal_period)) {
-	print $langs->trans('ErrorNoFiscalPeriodActiveFound');
+	print $langs->trans('ErrorNoFiscalPeriodActiveFound', $langs->transnoentitiesnoconv("Accounting"), $langs->transnoentitiesnoconv("Setup"), $langs->transnoentitiesnoconv("FiscalPeriod"));
 }
 
 if (isset($current_fiscal_period)) {
@@ -309,7 +324,7 @@ if (isset($current_fiscal_period)) {
 	$head[0][0] = DOL_URL_ROOT . '/accountancy/closure/index.php?fiscal_period_id=' . $current_fiscal_period['id'];
 	$head[0][1] = $langs->trans("AccountancyClosureStep1");
 	$head[0][2] = 'step1';
-	print dol_get_fiche_head($head, 'step1', '', -1, 'title_accountancy');
+	print dol_get_fiche_head($head, 'step1', '', -1, '');
 
 	print '<span class="opacitymedium">' . $langs->trans("AccountancyClosureStep1Desc") . '</span><br>';
 
@@ -334,7 +349,7 @@ if (isset($current_fiscal_period)) {
 		print '<td class="right">' . $langs->trans("Year") . '</td>';
 	}
 	for ($i = 1; $i <= 12; $i++) {
-		print '<td class="right">' . $langs->trans('MonthShort' . str_pad($i, 2, '0', STR_PAD_LEFT)) . '</td>';
+		print '<td class="right">' . $langs->trans('MonthShort' . str_pad((string) $i, 2, '0', STR_PAD_LEFT)) . '</td>';
 	}
 	print '<td class="right"><b>' . $langs->trans("Total") . '</b></td>';
 	print '</tr>';
@@ -355,12 +370,14 @@ if (isset($current_fiscal_period)) {
 	print "</table>\n";
 	print '</div>';
 
+	print '<br>';
+
 	// Step 2
 	$head = array();
 	$head[0][0] = DOL_URL_ROOT . '/accountancy/closure/index.php?fiscal_period_id=' . $current_fiscal_period['id'];
 	$head[0][1] = $langs->trans("AccountancyClosureStep2");
 	$head[0][2] = 'step2';
-	print dol_get_fiche_head($head, 'step2', '', -1, 'title_accountancy');
+	print dol_get_fiche_head($head, 'step2', '', -1, '');
 
 	// print '<span class="opacitymedium">' . $langs->trans("AccountancyClosureStep2Desc") . '</span><br>';
 
@@ -371,12 +388,14 @@ if (isset($current_fiscal_period)) {
 	}
 	print_barre_liste('', '', '', '', '', '', '', -1, '', '', 0, $button, '', 0, 1, 0);
 
+	print '<br>';
+
 	// Step 3
 	$head = array();
 	$head[0][0] = DOL_URL_ROOT . '/accountancy/closure/index.php?fiscal_period_id=' . $current_fiscal_period['id'];
 	$head[0][1] = $langs->trans("AccountancyClosureStep3");
 	$head[0][2] = 'step3';
-	print dol_get_fiche_head($head, 'step3', '', -1, 'title_accountancy');
+	print dol_get_fiche_head($head, 'step3', '', -1, '');
 
 	// print '<span class="opacitymedium">' . $langs->trans("AccountancyClosureStep3Desc") . '</span><br>';
 

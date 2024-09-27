@@ -71,7 +71,7 @@ if (GETPOST('enddatemonth')) {
 	$enddate = dol_mktime(23, 59, 59, GETPOSTINT('enddatemonth'), GETPOSTINT('enddateday'), GETPOST('enddateyear'));
 }
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $object = new Product($db);
 $hookmanager->initHooks(array('marginproductlist'));
 
@@ -96,7 +96,7 @@ $invoicestatic = new Facture($db);
 
 $form = new Form($db);
 
-llxHeader('', $langs->trans("Margins").' - '.$langs->trans("Products"));
+llxHeader('', $langs->trans("Margins").' - '.$langs->trans("Products"), '', '', 0, 0, '', '', '', 'mod-margin page-productmargins');
 
 $text = $langs->trans("Margins");
 //print load_fiche_titre($text);
@@ -121,7 +121,7 @@ print img_picto('', 'product').$form->select_produits(($id > 0 ? $id : ''), 'id'
 print '</td></tr>';
 
 // Categories
-$TCats = $form->select_all_categories('product', array(), '', 64, 0, 1);
+$TCats = $form->select_all_categories('product', array(), '', 64, 0, 3);
 
 print '<tr>';
 print '<td class="titlefield">'.$langs->trans('Category').'</td>';
@@ -134,11 +134,11 @@ print '</tr>';
 print '<tr>';
 print '<td class="titlefield">'.$langs->trans('DateStart').' ('.$langs->trans("DateValidation").')</td>';
 print '<td>';
-print $form->selectDate($startdate, 'startdate', '', '', 1, "sel", 1, 1);
+print $form->selectDate($startdate, 'startdate', 0, 0, 1, "sel", 1, 1);
 print '</td>';
 print '<td>'.$langs->trans('DateEnd').' ('.$langs->trans("DateValidation").')</td>';
 print '<td>';
-print $form->selectDate($enddate, 'enddate', '', '', 1, "sel", 1, 1);
+print $form->selectDate($enddate, 'enddate', 0, 0, 1, "sel", 1, 1);
 print '</td>';
 print '<td style="text-align: center;">';
 print '<input type="submit" class="button" value="'.dol_escape_htmltag($langs->trans('Refresh')).'" />';
@@ -247,12 +247,16 @@ if (is_array($listofcateg)) {
 	}
 }
 
+$totalMargin = 0;
+$marginRate = '';
+$markRate = '';
 dol_syslog('margin::productMargins.php', LOG_DEBUG);
 $result = $db->query($sql);
 if ($result) {
 	$num = $db->num_rows($result);
 
 	print '<br>';
+	// @phan-suppress-next-line PhanPluginSuspiciousParamPosition, PhanPluginSuspiciousParamOrder
 	print_barre_liste($langs->trans("MarginDetails"), $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, '', $num, $num, '', 0, '', '', 0, 1);
 
 	//var_dump($conf->global->MARGIN_TYPE);
@@ -299,12 +303,24 @@ if ($result) {
 			$pv = $objp->selling_price;
 			$marge = $objp->marge;
 
-			if ($marge < 0) {
-				$marginRate = ($pa != 0) ? -1 * (100 * $marge / $pa) : '';
-				$markRate = ($pv != 0) ? -1 * (100 * $marge / $pv) : '';
+			if ($pa != 0) {
+				$marginRate = (100 * $marge / $pa);
+				// We invert the sign if the margin is negative, regardless of the sign of the purchase price
+				if ($marge < 0) {
+					$marginRate = -$marginRate;
+				}
 			} else {
-				$marginRate = ($pa != 0) ? (100 * $marge / $pa) : '';
-				$markRate = ($pv != 0) ? (100 * $marge / $pv) : '';
+				$marginRate = '';
+			}
+
+			if ($pv != 0) {
+				$markRate = (100 * $marge / $pv);
+				// We invert the sign if the margin is negative, as in the original logic
+				if ($marge < 0) {
+					$markRate = -$markRate;
+				}
+			} else {
+				$markRate = '';
 			}
 
 			print '<tr class="oddeven">';

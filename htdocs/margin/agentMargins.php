@@ -78,12 +78,13 @@ if (!empty($enddatemonth)) {
 	$enddate = dol_mktime(23, 59, 59, $enddatemonth, $enddateday, $enddateyear);
 }
 
+$hookmanager->initHooks(array('marginagentlist'));
+
 // Security check
 $result = restrictedArea($user, 'margins');
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $object = new User($db);
-$hookmanager->initHooks(array('marginagentlist'));
 
 /*
  * Actions
@@ -103,7 +104,7 @@ $invoicestatic = new Facture($db);
 
 $form = new Form($db);
 
-llxHeader('', $langs->trans("Margins").' - '.$langs->trans("Agents"));
+llxHeader('', $langs->trans("Margins").' - '.$langs->trans("Agents"), '', '', 0, 0, '', '', '', 'mod-margin page-agentmargins');
 
 $text = $langs->trans("Margins");
 //print load_fiche_titre($text);
@@ -129,11 +130,11 @@ print '</td></tr>';
 // Start date
 print '<td>'.$langs->trans('DateStart').' ('.$langs->trans("DateValidation").')</td>';
 print '<td>';
-print $form->selectDate($startdate, 'startdate', '', '', 1, "sel", 1, 1);
+print $form->selectDate($startdate, 'startdate', 0, 0, 1, "sel", 1, 1);
 print '</td>';
 print '<td>'.$langs->trans('DateEnd').' ('.$langs->trans("DateValidation").')</td>';
 print '<td>';
-print $form->selectDate($enddate, 'enddate', '', '', 1, "sel", 1, 1);
+print $form->selectDate($enddate, 'enddate', 0, 0, 1, "sel", 1, 1);
 print '</td>';
 print '<td style="text-align: center;">';
 print '<input type="submit" class="button" value="'.dol_escape_htmltag($langs->trans('Refresh')).'" />';
@@ -208,31 +209,34 @@ if (!empty($agentid)) {
 	$param .= "&amp;agentid=".urlencode($agentid);
 }
 if (!empty($startdateday)) {
-	$param .= "&amp;startdateday=".urlencode($startdateday);
+	$param .= "&amp;startdateday=".urlencode((string) ($startdateday));
 }
 if (!empty($startdatemonth)) {
-	$param .= "&amp;startdatemonth=".urlencode($startdatemonth);
+	$param .= "&amp;startdatemonth=".urlencode((string) ($startdatemonth));
 }
 if (!empty($startdateyear)) {
-	$param .= "&amp;startdateyear=".urlencode($startdateyear);
+	$param .= "&amp;startdateyear=".urlencode((string) ($startdateyear));
 }
 if (!empty($enddateday)) {
-	$param .= "&amp;enddateday=".urlencode($enddateday);
+	$param .= "&amp;enddateday=".urlencode((string) ($enddateday));
 }
 if (!empty($enddatemonth)) {
-	$param .= "&amp;enddatemonth=".urlencode($enddatemonth);
+	$param .= "&amp;enddatemonth=".urlencode((string) ($enddatemonth));
 }
 if (!empty($enddateyear)) {
-	$param .= "&amp;enddateyear=".urlencode($enddateyear);
+	$param .= "&amp;enddateyear=".urlencode((string) ($enddateyear));
 }
 
-
+$totalMargin = 0;
+$marginRate = '';
+$markRate = '';
 dol_syslog('margin::agentMargins.php', LOG_DEBUG);
 $result = $db->query($sql);
 if ($result) {
 	$num = $db->num_rows($result);
 
 	print '<br>';
+	// @phan-suppress-next-line PhanPluginSuspiciousParamPosition, PhanPluginSuspiciousParamOrder
 	print_barre_liste($langs->trans("MarginDetails"), $page, $_SERVER["PHP_SELF"], "", $sortfield, $sortorder, '', $num, $num, '', 0, '', '', 0, 1);
 
 	if (getDolGlobalString('MARGIN_TYPE') == "1") {

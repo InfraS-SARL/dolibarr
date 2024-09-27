@@ -5,7 +5,7 @@
  * Copyright (C) 2011-2016	Juanjo Menent			<jmenent@2byte.es>
  * Copyright (C) 2013 		Philippe Grand			<philippe.grand@atoo-net.com>
  * Copyright (C) 2015-2016	Alexandre Spangaro		<aspangaro@open-dsi.fr>
- * Copyright (C) 2018-2021  Frédéric France         <frederic.france@netlogic.fr>
+ * Copyright (C) 2018-2024	Frédéric France         <frederic.france@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -321,7 +321,7 @@ if ($action == 'new') {
 	$h = 0;
 	$head[$h][0] = $_SERVER["PHP_SELF"].'?action=new';
 	$head[$h][1] = $langs->trans("MenuChequeDeposits");
-	$hselected = $h;
+	$hselected = (string) $h;
 	$h++;
 
 	print load_fiche_titre($title, '', 'bank_account');
@@ -333,9 +333,10 @@ if ($action == 'new') {
 	}
 
 	$h = 0;
+	$head = array();
 	$head[$h][0] = $_SERVER["PHP_SELF"].'?id='.$object->id;
 	$head[$h][1] = $langs->trans("CheckReceipt");
-	$hselected = $h;
+	$hselected = (string) $h;
 	$h++;
 	//  $head[$h][0] = DOL_URL_ROOT.'/compta/paiement/cheque/info.php?id='.$object->id;
 	//  $head[$h][1] = $langs->trans("Info");
@@ -628,7 +629,7 @@ if ($action == 'new') {
 		print '<form name="setdate" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'" method="post">';
 		print '<input type="hidden" name="token" value="'.newToken().'">';
 		print '<input type="hidden" name="action" value="setdate">';
-		print $form->selectDate($object->date_bordereau, 'datecreate_', '', '', '', "setdate");
+		print $form->selectDate($object->date_bordereau, 'datecreate_', 0, 0, 0, "setdate");
 		print '<input type="submit" class="button button-edit" value="'.$langs->trans('Modify').'">';
 		print '</form>';
 	} else {

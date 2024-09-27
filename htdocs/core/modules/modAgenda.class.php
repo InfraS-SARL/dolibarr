@@ -8,6 +8,8 @@
  * Copyright (C) 2013      Cedric Gross         <c.gross@kreiz-it.fr>
  * Copyright (C) 2015      Bahfir Abbes         <bafbes@gmail.com>
  * Copyright (C) 2017      Juanjo Menent        <jmenent@2byte.es>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
+ * Copyright (C) 2024       Frédéric France             <frederic.france@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +75,7 @@ class modAgenda extends DolibarrModules
 		$this->conflictwith = array(); // List of module class names as string this module is in conflict with
 		$this->langfiles = array("companies","project");
 		$this->phpmin = array(7, 0); // Minimum version of PHP required by module
+		$this->enabled_bydefault = true; // Will be enabled during install
 
 		// Module parts
 		$this->module_parts = array();
@@ -97,8 +100,9 @@ class modAgenda extends DolibarrModules
 				$this->const[] = array('MAIN_AGENDA_ACTIONAUTO_'.$obj->code, "chaine", "1", '', 0, 'current');
 			}
 		} else {
-			dol_print_error($this->db->lasterror());
+			dol_print_error($this->db, $this->db->lasterror());
 		}
+		//$this->const[] = array("MAIN_AGENDA_XCAL_EXPORTKEY", "chaine", "123456", "Securekey for the public link");
 
 		// New pages on tabs
 		// -----------------
@@ -200,7 +204,7 @@ class modAgenda extends DolibarrModules
 		//							'langs'=>'mylangfile',	// Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
 		//							'position'=>100,
 		//							'enabled'=>'1',			// Define condition to show or hide menu entry. Use '$conf->mymodule->enabled' if entry must be visible if module is enabled.
-		//							'perms'=>'1',			// Use 'perms'=>'$user->rights->mymodule->level1->level2' if you want your menu with a permission rules
+		//							'perms'=>'1',			// Use 'perms'=>'$user->hasRight('mymodule', 'level1', 'level2') if you want your menu with a permission rules
 		//							'target'=>'',
 		//							'user'=>2);				// 0=Menu for internal users, 1=external users, 2=both
 		// $r++;
@@ -255,7 +259,7 @@ class modAgenda extends DolibarrModules
 			'type' => 'left',
 			'titre' => 'Calendar',
 			'mainmenu' => 'agenda',
-			'url' => '/comm/action/index.php?action=default&amp;mainmenu=agenda&amp;leftmenu=agenda',
+			'url' => '/comm/action/index.php?mainmenu=agenda&amp;leftmenu=agenda',
 			'langs' => 'agenda',
 			'position' => 140,
 			'perms' => '$user->hasRight("agenda", "myactions", "read")',
@@ -269,7 +273,7 @@ class modAgenda extends DolibarrModules
 			'type' => 'left',
 			'titre' => 'MenuToDoMyActions',
 			'mainmenu' => 'agenda',
-			'url' => '/comm/action/index.php?action=default&amp;mainmenu=agenda&amp;leftmenu=agenda&amp;status=todo&amp;filter=mine',
+			'url' => '/comm/action/index.php?mainmenu=agenda&amp;leftmenu=agenda&amp;status=todo&amp;filter=mine',
 			'langs' => 'agenda',
 			'position' => 141,
 			'perms' => '$user->hasRight("agenda", "myactions", "read")',
@@ -283,7 +287,7 @@ class modAgenda extends DolibarrModules
 			'type' => 'left',
 			'titre' => 'MenuDoneMyActions',
 			'mainmenu' => 'agenda',
-			'url' => '/comm/action/index.php?action=default&amp;mainmenu=agenda&amp;leftmenu=agenda&amp;status=done&amp;filter=mine',
+			'url' => '/comm/action/index.php?mainmenu=agenda&amp;leftmenu=agenda&amp;status=done&amp;filter=mine',
 			'langs' => 'agenda',
 			'position' => 142,
 			'perms' => '$user->hasRight("agenda", "myactions", "read")',
@@ -297,7 +301,7 @@ class modAgenda extends DolibarrModules
 			'type' => 'left',
 			'titre' => 'MenuToDoActions',
 			'mainmenu' => 'agenda',
-			'url' => '/comm/action/index.php?action=default&amp;mainmenu=agenda&amp;leftmenu=agenda&amp;status=todo&amp;filtert=-1',
+			'url' => '/comm/action/index.php?mainmenu=agenda&amp;leftmenu=agenda&amp;status=todo&amp;filtert=-1',
 			'langs' => 'agenda',
 			'position' => 143,
 			'perms' => '$user->hasRight("agenda", "allactions", "read")',
@@ -311,7 +315,7 @@ class modAgenda extends DolibarrModules
 			'type' => 'left',
 			'titre' => 'MenuDoneActions',
 			'mainmenu' => 'agenda',
-			'url' => '/comm/action/index.php?action=default&amp;mainmenu=agenda&amp;leftmenu=agenda&amp;status=done&amp;filtert=-1',
+			'url' => '/comm/action/index.php?mainmenu=agenda&amp;leftmenu=agenda&amp;status=done&amp;filtert=-1',
 			'langs' => 'agenda',
 			'position' => 144,
 			'perms' => '$user->hasRight("agenda", "allactions", "read")',
@@ -582,5 +586,29 @@ class modAgenda extends DolibarrModules
 		$keyforelement = 'action';
 		$keyforaliasextra = 'extra';
 		include DOL_DOCUMENT_ROOT.'/core/extrafieldsinexport.inc.php';
+	}
+
+
+	/**
+	 *		Function called when module is enabled.
+	 *		The init function add constants, boxes, permissions and menus (defined in constructor) into Dolibarr database.
+	 *		It also creates data directories
+	 *
+	 *      @param      string	$options    Options when enabling module ('', 'newboxdefonly', 'noboxes')
+	 *      @return     int             	1 if OK, 0 if KO
+	 */
+	public function init($options = '')
+	{
+		global $conf;
+
+		// Permissions
+		$this->remove($options);
+
+		$sql = array(
+			"DELETE FROM ".MAIN_DB_PREFIX."document_model WHERE nom = '".$this->db->escape($this->const[0][2])."' AND type='member' AND entity = ".((int) $conf->entity),
+			"INSERT INTO ".MAIN_DB_PREFIX."document_model (nom, type, entity) VALUES('".$this->db->escape($this->const[0][2])."','member',".((int) $conf->entity).")"
+		);
+
+		return $this->_init($sql, $options);
 	}
 }

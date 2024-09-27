@@ -20,9 +20,9 @@
  */
 
 /**
- * 	\file       htdocs/compta/bank/document.php
+ * 	\file       htdocs/compta/bankaccount_statement_document.php
  * 	\ingroup    banque
- * 	\brief      Page de gestion des documents attaches a un compte bancaire
+ * 	\brief      Page to manage document attached to a bank receipt
  */
 require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT."/core/lib/bank.lib.php";
@@ -130,7 +130,7 @@ if (!empty($numref)) {
 	$object->fetch_thirdparty();
 	$upload_dir = $conf->bank->dir_output."/".$id."/statement/".dol_sanitizeFileName($numref);
 }
-$backtopage = $_SERVER['PHP_SELF']."?account=".urlencode($id)."&num=".urlencode($numref);
+$backtopage = $_SERVER['PHP_SELF']."?account=".urlencode((string) ($id))."&num=".urlencode((string) ($numref));
 include DOL_DOCUMENT_ROOT.'/core/actions_linkedfiles.inc.php';
 
 

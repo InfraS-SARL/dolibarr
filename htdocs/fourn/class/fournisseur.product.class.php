@@ -8,6 +8,7 @@
  * Copyright (C) 2016-2023	Charlene Benke         <charlene@patas-monkey.com>
  * Copyright (C) 2019-2024  Frédéric France       <frederic.france@free.fr>
  * Copyright (C) 2020       Pierre Ardoin         <mapiolca@me.com>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,6 +61,7 @@ class ProductFournisseur extends Product
 	public $id;
 
 	/**
+	 * @var string
 	 * @deprecated
 	 * @see $ref_supplier
 	 */
@@ -81,11 +83,12 @@ class ProductFournisseur extends Product
 	public $desc_supplier;
 
 	/**
-	 * @var float		The VAT rate by default for this {supplier, qty, product}. Can be set by get_buyprice().
+	 * @var string		The VAT rate by default for this {supplier, qty, product}. Can be set by get_buyprice().
 	 */
 	public $vatrate_supplier;
 
 	/**
+	 * @var int
 	 * @deprecated
 	 * @see $product_id
 	 */
@@ -176,7 +179,12 @@ class ProductFournisseur extends Product
 	public $reputations = array();
 
 	// Multicurreny
+
+	/**
+	 * @var int		ID of multicurrency
+	 */
 	public $fourn_multicurrency_id;
+
 	public $fourn_multicurrency_code;
 	public $fourn_multicurrency_tx;
 	public $fourn_multicurrency_price;
@@ -224,7 +232,7 @@ class ProductFournisseur extends Product
 
 		$this->db = $db;
 		$langs->load("suppliers");
-		$this->reputations = array('-1'=>'', 'FAVORITE'=>$langs->trans('Favorite'), 'NOTTHGOOD'=>$langs->trans('NotTheGoodQualitySupplier'), 'DONOTORDER'=>$langs->trans('DoNotOrderThisProductToThisSupplier'));
+		$this->reputations = array('-1' => '', 'FAVORITE' => $langs->trans('Favorite'), 'NOTTHGOOD' => $langs->trans('NotTheGoodQualitySupplier'), 'DONOTORDER' => $langs->trans('DoNotOrderThisProductToThisSupplier'));
 	}
 
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
@@ -390,7 +398,7 @@ class ProductFournisseur extends Product
 		}
 		if ($price_base_type == 'TTC') {
 			$ttx = $tva_tx;
-			$buyprice = $buyprice / (1 + ($ttx / 100));
+			$buyprice /= (1 + ($ttx / 100));
 		}
 
 		// Multicurrency
@@ -405,19 +413,19 @@ class ProductFournisseur extends Product
 			}
 			if ($multicurrency_price_base_type == 'TTC') {
 				$ttx = $tva_tx;
-				$multicurrency_buyprice = $multicurrency_buyprice / (1 + ($ttx / 100));
+				$multicurrency_buyprice /= (1 + ($ttx / 100));
 			}
 			$multicurrency_buyprice = price2num($multicurrency_buyprice, 'MU');
-			$multicurrency_unitBuyPrice = price2num($multicurrency_buyprice / $qty, 'MU');
+			$multicurrency_unitBuyPrice = price2num((float) $multicurrency_buyprice / $qty, 'MU');
 
-			$buyprice = $multicurrency_buyprice / $multicurrency_tx;
+			$buyprice = (float) $multicurrency_buyprice / $multicurrency_tx;
 			$fk_multicurrency = MultiCurrency::getIdFromCode($this->db, $multicurrency_code);
 		}
 
-		$buyprice = price2num($buyprice, 'MU');
-		$charges = price2num($charges, 'MU');
-		$qty = price2num($qty, 'MS');
-		$unitBuyPrice = price2num($buyprice / $qty, 'MU');
+		$buyprice = (float) price2num($buyprice, 'MU');
+		$charges = (float) price2num($charges, 'MU');
+		$qty = (float) price2num($qty, 'MS');
+		$unitBuyPrice = (float) price2num($buyprice / $qty, 'MU');
 
 		// We can have a purchase ref that need to buy 100 min for a given price and with a packaging of 50.
 		//$packaging = price2num(((empty($this->packaging) || $this->packaging < $qty) ? $qty : $this->packaging), 'MS');
@@ -444,10 +452,6 @@ class ProductFournisseur extends Product
 		}
 		if (empty($localtax2)) {
 			$localtax2 = 0; // If = '' then = 0
-		}
-
-		// Check parameters
-		if ($buyprice != '' && !is_numeric($buyprice)) {
 		}
 
 		$this->db->begin();
@@ -478,6 +482,7 @@ class ProductFournisseur extends Product
 			}
 			$sql = "UPDATE ".MAIN_DB_PREFIX."product_fournisseur_price";
 			$sql .= " SET fk_user = ".((int) $user->id)." ,";
+			$sql .= " datec = '".$this->db->idate($now)."' ,";	// Note: Even if this is an update, we update the creation date as the log of each change is tracked into product_fournisseur_log.
 			$sql .= " ref_fourn = '".$this->db->escape($ref_fourn)."',";
 			$sql .= " desc_fourn = '".$this->db->escape($desc_fourn)."',";
 			$sql .= " price = ".((float) $buyprice).",";
@@ -489,7 +494,7 @@ class ProductFournisseur extends Product
 			$sql .= " multicurrency_price = ".(isset($multicurrency_buyprice) ? "'".$this->db->escape(price2num($multicurrency_buyprice))."'" : 'null').",";
 			$sql .= " multicurrency_unitprice = ".(isset($multicurrency_unitBuyPrice) ? "'".$this->db->escape(price2num($multicurrency_unitBuyPrice))."'" : 'null').",";
 			$sql .= " multicurrency_tx = ".(isset($multicurrency_tx) ? "'".$this->db->escape($multicurrency_tx)."'" : '1').",";
-			$sql .= " fk_multicurrency = ".(isset($fk_multicurrency) ? "'".$this->db->escape($fk_multicurrency)."'" : 'null').",";
+			$sql .= " fk_multicurrency = ".(isset($fk_multicurrency) ? (int) $fk_multicurrency : 'null').",";
 			$sql .= " multicurrency_code = ".(isset($multicurrency_code) ? "'".$this->db->escape($multicurrency_code)."'" : 'null').",";
 			$sql .= " entity = ".$conf->entity.",";
 			$sql .= " tva_tx = ".price2num($tva_tx).",";
@@ -515,7 +520,7 @@ class ProductFournisseur extends Product
 					$productfournisseurprice = new ProductFournisseurPrice($this->db);
 					$res = $productfournisseurprice->fetch($this->product_fourn_price_id);
 					if ($res > 0) {
-						foreach ($options as $key=>$value) {
+						foreach ($options as $key => $value) {
 							$productfournisseurprice->array_options[$key] = $value;
 						}
 						$res = $productfournisseurprice->update($user);
@@ -619,7 +624,7 @@ class ProductFournisseur extends Product
 						$productfournisseurprice = new ProductFournisseurPrice($this->db);
 						$res = $productfournisseurprice->fetch($this->product_fourn_price_id);
 						if ($res > 0) {
-							foreach ($options as $key=>$value) {
+							foreach ($options as $key => $value) {
 								$productfournisseurprice->array_options[$key] = $value;
 							}
 							$res = $productfournisseurprice->update($user);
@@ -774,7 +779,7 @@ class ProductFournisseur extends Product
 	 *    @param	int			$limit		Limit
 	 *    @param	int			$offset		Offset
 	 *    @param	int			$socid		Filter on a third party id
-	 *    @return	array|int				Array of ProductFournisseur with new properties to define supplier price
+	 *    @return	ProductFournisseur[]|int<-1,-1>	Array of ProductFournisseur with new properties to define supplier price
 	 *    @see find_min_price_product_fournisseur()
 	 */
 	public function list_product_fournisseur_price($prodid, $sortfield = '', $sortorder = '', $limit = 0, $offset = 0, $socid = 0)
@@ -884,7 +889,7 @@ class ProductFournisseur extends Product
 	 *  Load properties for minimum price
 	 *
 	 *  @param	int		$prodid	    Product id
-	 *  @param	int		$qty		Minimum quantity
+	 *  @param	float	$qty		Minimum quantity
 	 *  @param	int		$socid		get min price for specific supplier
 	 *  @return int					Return integer <0 if KO, 0=Not found of no product id provided, >0 if OK
 	 *  @see list_product_fournisseur_price()
@@ -915,7 +920,7 @@ class ProductFournisseur extends Product
 		$this->fourn_multicurrency_price       = 0;
 		$this->fourn_multicurrency_unitprice   = 0;
 		$this->fourn_multicurrency_tx          = 0;
-		$this->fourn_multicurrency_id          = '';
+		$this->fourn_multicurrency_id          = 0;
 		$this->fourn_multicurrency_code        = '';
 
 		$sql = "SELECT s.nom as supplier_name, s.rowid as fourn_id,";
@@ -972,11 +977,11 @@ class ProductFournisseur extends Product
 						if ($price_result >= 0) {
 							$fourn_price = price2num($price_result, 'MU');
 							if ($record["quantity"] != 0) {
-								$fourn_unitprice = price2num($fourn_price / $record["quantity"], 'MU');
+								$fourn_unitprice = price2num((float) $fourn_price / $record["quantity"], 'MU');
 							} else {
 								$fourn_unitprice = $fourn_price;
 							}
-							$fourn_unitprice_with_discount = $fourn_unitprice * (1 - $record["remise_percent"] / 100);
+							$fourn_unitprice_with_discount = (float) $fourn_unitprice * (1 - $record["remise_percent"] / 100);
 						}
 					}
 					if ($fourn_unitprice < $min || $min == -1) {
@@ -1351,7 +1356,7 @@ class ProductFournisseur extends Product
 			$label .= $this->displayPriceProductFournisseurLog($logPrices);
 		}
 
-		$url = DOL_URL_ROOT.'/product/fournisseurs.php?id='.((int) $this->id).'&action=create_price&token='.newToken().'&socid='.((int) $this->fourn_id).'&rowid='.((int) $this->product_fourn_price_id);
+		$url = DOL_URL_ROOT.'/product/price_suppliers.php?id='.((int) $this->id).'&action=create_price&token='.newToken().'&socid='.((int) $this->fourn_id).'&rowid='.((int) $this->product_fourn_price_id);
 
 		if ($option != 'nolink') {
 			// Add param to save lastsearch_values or not
@@ -1394,7 +1399,7 @@ class ProductFournisseur extends Product
 
 		global $action;
 		$hookmanager->initHooks(array($this->element . 'dao'));
-		$parameters = array('id'=>$this->id, 'getnomurl' => &$result);
+		$parameters = array('id' => $this->id, 'getnomurl' => &$result);
 		$reshook = $hookmanager->executeHooks('getNomUrl', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
 		if ($reshook > 0) {
 			$result = $hookmanager->resPrint;

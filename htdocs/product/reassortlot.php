@@ -7,6 +7,7 @@
  * Copyright (C) 2016       Ferran Marcet			<fmarcet@2byte.es>
  * Copyright (C) 2019       Juanjo Menent			<jmenent@2byte.es>
  * Copyright (C) 2021       Noé Cendrier			<noe.cendrier@altairis.fr>
+ * Copyright (C) 2024		Frédéric France			<frederic.france@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -128,31 +129,32 @@ if (!empty($canvas)) {
 	$objcanvas->getCanvas('product', 'list', $canvas);
 }
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $hookmanager->initHooks(array('reassortlotlist'));
+
+// Definition of array of fields for columns
+$arrayfields = array(
+	array('type' => 'varchar', 'label' => 'Ref', 'checked' => 1, 'enabled' => 1, 'position' => 1),
+	array('type' => 'varchar', 'label' => 'Label', 'checked' => 1, 'enabled' => 1, 'position' => 1),
+	array('type' => 'int', 'label' => 'Warehouse', 'checked' => 1, 'enabled' => 1, 'position' => 1),
+	array('type' => 'varchar', 'label' => 'Lot', 'checked' => 1, 'enabled' => 1, 'position' => 1),
+	array('type' => 'varchar', 'label' => 'DLC', 'checked' => 1, 'enabled' => 1, 'position' => 1),
+	array('type' => 'varchar', 'label' => 'DLUO', 'checked' => 1, 'enabled' => 1, 'position' => 1),
+	array('type' => 'int', 'label' => 'Stock', 'checked' => 1, 'enabled' => 1, 'position' => 1),
+	array('type' => 'int', 'label' => 'StatusSell', 'checked' => 1, 'enabled' => 1, 'position' => 1),
+	array('type' => 'int', 'label' => 'StatusBuy', 'checked' => 1, 'enabled' => 1, 'position' => 1),
+);
+
+//$arrayfields['anotherfield'] = array('type'=>'integer', 'label'=>'AnotherField', 'checked'=>1, 'enabled'=>1, 'position'=>90, 'csslist'=>'right');
+$arrayfields = dol_sort_array($arrayfields, 'position');
+
 
 // Security check
 if ($user->socid) {
 	$socid = $user->socid;
 }
 $result = restrictedArea($user, 'produit|service', 0, 'product&product');
-
-// Definition of array of fields for columns
-$arrayfields = array(
-	array('type'=>'varchar', 'label'=>'Ref', 'checked'=>1, 'enabled'=>1, 'position'=>1),
-	array('type'=>'varchar', 'label'=>'Label', 'checked'=>1, 'enabled'=>1, 'position'=>1),
-	array('type'=>'int', 'label'=>'Warehouse', 'checked'=>1, 'enabled'=>1, 'position'=>1),
-	array('type'=>'varchar', 'label'=>'Lot', 'checked'=>1, 'enabled'=>1, 'position'=>1),
-	array('type'=>'varchar', 'label'=>'DLC', 'checked'=>1, 'enabled'=>1, 'position'=>1),
-	array('type'=>'varchar', 'label'=>'DLUO', 'checked'=>1, 'enabled'=>1, 'position'=>1),
-	array('type'=>'int', 'label'=>'Stock', 'checked'=>1, 'enabled'=>1, 'position'=>1),
-	array('type'=>'int', 'label'=>'StatusSell', 'checked'=>1, 'enabled'=>1, 'position'=>1),
-	array('type'=>'int', 'label'=>'StatusBuy', 'checked'=>1, 'enabled'=>1, 'position'=>1),
-);
-
-//$arrayfields['anotherfield'] = array('type'=>'integer', 'label'=>'AnotherField', 'checked'=>1, 'enabled'=>1, 'position'=>90, 'csslist'=>'right');
-$arrayfields = dol_sort_array($arrayfields, 'position');
-
+$result = restrictedArea($user, 'stock');
 
 
 /*
@@ -214,11 +216,11 @@ if (empty($reshook)) {
 	}
 
 	// Mass actions
-		/*$objectclass = 'MyObject';
-		$objectlabel = 'MyObject';
-		$uploaddir = $conf->mymodule->dir_output;
-		include DOL_DOCUMENT_ROOT.'/core/actions_massactions.inc.php';
-		*/
+	/*$objectclass = 'MyObject';
+	$objectlabel = 'MyObject';
+	$uploaddir = $conf->mymodule->dir_output;
+	include DOL_DOCUMENT_ROOT.'/core/actions_massactions.inc.php';
+	*/
 }
 
 
@@ -295,7 +297,7 @@ if ($search_all) {
 	$sql .= natural_search(array('p.ref', 'p.label', 'p.description', 'p.note'), $search_all);
 }
 // if the type is not 1, we show all products (type = 0,2,3)
-if (dol_strlen($type)) {
+if (dol_strlen((string) $type)) {
 	if ($type == 1) {
 		$sql .= " AND p.fk_product_type = '1'";
 	} else {
@@ -489,10 +491,10 @@ if ($tobuy) {
 	$param .= "&tobuy=".urlencode($tobuy);
 }
 if ($type != '') {
-	$param .= "&type=".urlencode($type);
+	$param .= "&type=".urlencode((string) ($type));
 }
 if ($fourn_id) {
-	$param .= "&fourn_id=".urlencode($fourn_id);
+	$param .= "&fourn_id=".urlencode((string) ($fourn_id));
 }
 if ($snom) {
 	$param .= "&snom=".urlencode($snom);
@@ -504,7 +506,7 @@ if ($search_batch) {
 	$param .= "&search_batch=".urlencode($search_batch);
 }
 if ($sbarcode) {
-	$param .= "&sbarcode=".urlencode($sbarcode);
+	$param .= "&sbarcode=".urlencode((string) ($sbarcode));
 }
 if ($search_warehouse) {
 	$param .= "&search_warehouse=".urlencode($search_warehouse);
@@ -519,10 +521,10 @@ if ($search_sale) {
 	$param .= "&search_sale=".urlencode($search_sale);
 }
 if (!empty($search_categ) && $search_categ != '-1') {
-	$param .= "&search_categ=".urlencode($search_categ);
+	$param .= "&search_categ=".urlencode((string) ($search_categ));
 }
 if (!empty($search_warehouse_categ) && $search_warehouse_categ != '-1') {
-	$param .= "&search_warehouse_categ=".urlencode($search_warehouse_categ);
+	$param .= "&search_warehouse_categ=".urlencode((string) ($search_warehouse_categ));
 }
 if ($search_stock_physique) {
 	$param .= '&search_stock_physique=' . urlencode($search_stock_physique);
@@ -530,7 +532,7 @@ if ($search_stock_physique) {
 /*if ($eatby)		$param.="&eatby=".$eatby;
 if ($sellby)	$param.="&sellby=".$sellby;*/
 
-llxHeader("", $title, $helpurl, $texte);
+llxHeader("", $title, $helpurl, $texte, 0, 0, '', '', '', 'mod-product page-reassortlot');
 
 print '<form id="searchFormList" action="'.$_SERVER["PHP_SELF"].'" method="POST" name="formulaire">'."\n";
 if ($optioncss != '') {
@@ -574,14 +576,14 @@ if (isModEnabled('category')) {
 	$moreforfilter .= '</div>';
 }
 
-$moreforfilter.='<label for="search_subjecttolotserial">'.$langs->trans("SubjectToLotSerialOnly").' </label><input type="checkbox" id="search_subjecttolotserial" name="search_subjecttolotserial" value="1"'.($search_subjecttolotserial ? ' checked' : '').'>';
+$moreforfilter .= '<label for="search_subjecttolotserial">'.$langs->trans("SubjectToLotSerialOnly").' </label><input type="checkbox" id="search_subjecttolotserial" name="search_subjecttolotserial" value="1"'.($search_subjecttolotserial ? ' checked' : '').'>';
 
 
 if (!empty($moreforfilter)) {
 	print '<div class="liste_titre liste_titre_bydiv centpercent">';
 	print $moreforfilter;
 	$parameters = array();
-	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters); // Note that $action and $object may have been modified by hook
+	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 	print $hookmanager->resPrint;
 	print '</div>';
 }
@@ -686,7 +688,7 @@ print_liste_field_titre('');
 print_liste_field_titre("ProductStatusOnSell", $_SERVER["PHP_SELF"], "p.tosell", "", $param, '', $sortfield, $sortorder, 'right ');
 print_liste_field_titre("ProductStatusOnBuy", $_SERVER["PHP_SELF"], "p.tobuy", "", $param, '', $sortfield, $sortorder, 'right ');
 // Hook fields
-$parameters = array('param'=>$param, 'sortfield'=>$sortfield, 'sortorder'=>$sortorder);
+$parameters = array('param' => $param, 'sortfield' => $sortfield, 'sortorder' => $sortorder);
 $reshook = $hookmanager->executeHooks('printFieldListTitle', $parameters); // Note that $action and $object may have been modified by hook
 print $hookmanager->resPrint;
 if (!getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
@@ -875,7 +877,7 @@ while ($i < $imaxinloop) {
 	}
 
 	// Fields values from hook
-	$parameters = array('obj'=>$objp);
+	$parameters = array('obj' => $objp);
 	$reshook = $hookmanager->executeHooks('printFieldListValue', $parameters, $product); // Note that $action and $object may have been modified by hook
 	print $hookmanager->resPrint;
 

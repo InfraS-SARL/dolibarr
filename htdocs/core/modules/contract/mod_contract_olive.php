@@ -3,6 +3,7 @@
  * Copyright (C) 2006-2009 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2014	   Floran Henry  <florian.henry@open-concept.pro>
  * Copyright (C) 2024		Frédéric France			<frederic.france@free.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +34,6 @@ require_once DOL_DOCUMENT_ROOT.'/core/modules/contract/modules_contract.php';
  */
 class mod_contract_olive extends ModelNumRefContracts
 {
-
 	// variables inherited from ModelNumRefContracts class
 	public $name = 'Olive';
 	public $version = 'dolibarr';
@@ -77,9 +77,9 @@ class mod_contract_olive extends ModelNumRefContracts
 	/**
 	 * Return an example of result returned by getNextValue
 	 *
-	 * @param	Societe		$objsoc		Object thirdparty
-	 * @param	Contrat		$contract	Object contract
-	 * @return	string					Return next value
+	 *	@param	Societe		$objsoc		Object thirdparty
+	 *	@param	Contrat		$contract	Object contract
+	 *	@return string|int<-1,0>		Value if OK, <=0 if KO
 	 */
 	public function getNextValue($objsoc, $contract)
 	{

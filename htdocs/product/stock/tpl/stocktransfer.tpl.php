@@ -22,7 +22,7 @@
 // Protection to avoid direct call of template
 if (empty($conf) || !is_object($conf)) {
 	print "Error, template page can't be called as URL";
-	exit;
+	exit(1);
 }
 
 ?>
@@ -78,7 +78,7 @@ if ($object->element == 'product') {
 	print $formproduct->selectWarehouses($selected, 'id_entrepot', $warehousestatus, 1, 0, 0, '', 0, 0, array(), 'minwidth75 maxwidth300 widthcentpercentminusx');
 	print '</td>';
 }
-if ($object->element == 'stock') {
+if ($object->element == 'stockmouvement') {
 	print '<td class="fieldrequired">'.$langs->trans("Product").'</td>';
 	print '<td>';
 	print img_picto('', 'product');
@@ -95,10 +95,10 @@ print '</tr>';
 // Serial / Eat-by date
 if (isModEnabled('productbatch') &&
 (($object->element == 'product' && $object->hasbatch())
-|| ($object->element == 'stock'))
+|| ($object->element == 'stockmouvement'))
 ) {
 	print '<tr>';
-	print '<td'.($object->element == 'stock' ? '' : ' class="fieldrequired"').'>'.$langs->trans("batch_number").'</td><td colspan="3">';
+	print '<td'.($object->element == 'stockmouvement' ? '' : ' class="fieldrequired"').'>'.$langs->trans("batch_number").'</td><td colspan="3">';
 	if ($pdluoid > 0) {
 		// If form was opened for a specific pdluoid, field is disabled
 		print '<input type="text" name="batch_number_bis" size="40" disabled="disabled" value="'.(GETPOST('batch_number') ? GETPOST('batch_number') : $pdluo->batch).'">';
@@ -112,12 +112,12 @@ if (isModEnabled('productbatch') &&
 	print '<tr>';
 	if (!getDolGlobalString('PRODUCT_DISABLE_SELLBY')) {
 		print '<td>'.$langs->trans("SellByDate").'</td><td>';
-		print $form->selectDate((!empty($d_sellby) ? $d_sellby : $pdluo->sellby), 'sellby', '', '', 1, "", 1, 0, ($pdluoid > 0 ? 1 : 0)); // If form was opened for a specific pdluoid, field is disabled
+		print $form->selectDate((!empty($d_sellby) ? $d_sellby : $pdluo->sellby), 'sellby', 0, 0, 1, "", 1, 0, ($pdluoid > 0 ? 1 : 0)); // If form was opened for a specific pdluoid, field is disabled
 		print '</td>';
 	}
 	if (!getDolGlobalString('PRODUCT_DISABLE_EATBY')) {
 		print '<td>'.$langs->trans("EatByDate").'</td><td>';
-		print $form->selectDate((!empty($d_eatby) ? $d_eatby : $pdluo->eatby), 'eatby', '', '', 1, "", 1, 0, ($pdluoid > 0 ? 1 : 0)); // If form was opened for a specific pdluoid, field is disabled
+		print $form->selectDate((!empty($d_eatby) ? $d_eatby : $pdluo->eatby), 'eatby', 0, 0, 1, "", 1, 0, ($pdluoid > 0 ? 1 : 0)); // If form was opened for a specific pdluoid, field is disabled
 		print '</td>';
 	}
 	print '</tr>';

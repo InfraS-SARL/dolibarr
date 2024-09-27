@@ -2,6 +2,8 @@
 /* Copyright (C) 2004      Rodolphe Quiedeville <rodolphe@quiedeville.org>
  * Copyright (C) 2004-2012 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2005-2009 Regis Houssin        <regis.houssin@inodbox.com>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
+ * Copyright (C) 2024       Frédéric France             <frederic.france@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,13 +119,13 @@ class pdf_standard_actions
 
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
-	 *      Write the object to document file to disk
+	 * Write the object to document file to disk
 	 *
-	 *      @param	int			$socid			Thirdparty id
-	 *      @param  Translate	$outputlangs    Lang object for output language
-	 *      @return int             			1=OK, 0=KO
+	 * @param  ?CommonObject	$object			Order/...
+	 * @param  Translate		$outputlangs    Lang object for output language
+	 * @return int<0,1>     			    	1=OK, 0=KO
 	 */
-	public function write_file($socid, $outputlangs)
+	public function write_file($object, $outputlangs)
 	{
 		// phpcs:enable
 		global $user, $conf, $langs, $hookmanager;
@@ -160,12 +162,12 @@ class pdf_standard_actions
 			global $action;
 			$object = new stdClass();
 
-			$parameters = array('file'=>$file, 'outputlangs'=>$outputlangs);
+			$parameters = array('file' => $file, 'outputlangs' => $outputlangs);
 			$reshook = $hookmanager->executeHooks('beforePDFCreation', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
 
 			$pdf = pdf_getInstance($this->format);
 			$heightforinfotot = 50; // Height reserved to output the info and total part
-			$heightforfreetext = (isset($conf->global->MAIN_PDF_FREETEXT_HEIGHT) ? $conf->global->MAIN_PDF_FREETEXT_HEIGHT : 5); // Height reserved to output the free text on last page
+			$heightforfreetext = getDolGlobalInt('MAIN_PDF_FREETEXT_HEIGHT', 5); // Height reserved to output the free text on last page
 			$heightforfooter = $this->marge_basse + 8; // Height reserved to output the footer (value include bottom margin)
 			$pdf->SetAutoPageBreak(1, 0);
 
@@ -192,7 +194,7 @@ class pdf_standard_actions
 			$nbpage = $this->_pages($pdf, $outputlangs); // Write content
 
 			if (method_exists($pdf, 'AliasNbPages')) {
-				$pdf->AliasNbPages();
+				$pdf->AliasNbPages();  // @phan-suppress-current-line PhanUndeclaredMethod
 			}
 			$pdf->Close();
 
@@ -204,7 +206,7 @@ class pdf_standard_actions
 				$hookmanager = new HookManager($this->db);
 			}
 			$hookmanager->initHooks(array('pdfgeneration'));
-			$parameters = array('file'=>$file, 'object'=>$object, 'outputlangs'=>$outputlangs);
+			$parameters = array('file' => $file, 'object' => $object, 'outputlangs' => $outputlangs);
 			global $action;
 			$reshook = $hookmanager->executeHooks('afterPDFCreation', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
 			if ($reshook < 0) {
@@ -214,7 +216,7 @@ class pdf_standard_actions
 
 			dolChmod($file);
 
-			$this->result = array('fullpath'=>$file);
+			$this->result = array('fullpath' => $file);
 
 			return 1;
 		}
@@ -355,7 +357,7 @@ class pdf_standard_actions
 	 *	@param	TCPDF		$pdf     		Object PDF
 	 *	@param  Translate	$outputlangs	Object lang for output
 	 *	@param	int			$pagenb			Page nb
-	 *  @return	float|int                   Return topshift value
+	 *  @return	float						Return topshift value
 	 */
 	private function _pagehead(&$pdf, $outputlangs, $pagenb)
 	{

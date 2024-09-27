@@ -1,5 +1,7 @@
 <?php
 /* Copyright (C) 2013 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2024       Frédéric France             <frederic.france@free.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +19,7 @@
 
 /**
  *	\file       htdocs/core/boxes/box_graph_orders_permonth.php
- *	\ingroup    commandes
+ *	\ingroup    orders
  *	\brief      Box to show graph of orders per month
  */
 include_once DOL_DOCUMENT_ROOT.'/core/boxes/modules_boxes.php';
@@ -67,7 +69,7 @@ class box_graph_orders_permonth extends ModeleBoxes
 		//include_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
 		//$commandestatic=new Commande($this->db);
 
-		$startmonth = $conf->global->SOCIETE_FISCAL_MONTH_START ? ($conf->global->SOCIETE_FISCAL_MONTH_START) : 1;
+		$startmonth = getDolGlobalInt('SOCIETE_FISCAL_MONTH_START', 1);
 		if (!getDolGlobalString('GRAPH_USE_FISCAL_YEAR')) {
 			$startmonth = 1;
 		}
@@ -75,13 +77,13 @@ class box_graph_orders_permonth extends ModeleBoxes
 		$text = $langs->trans("BoxCustomersOrdersPerMonth", $max);
 		$this->info_box_head = array(
 				'text' => $text,
-				'limit'=> dol_strlen($text),
-				'graph'=> 1,
-				'sublink'=>'',
-				'subtext'=>$langs->trans("Filter"),
-				'subpicto'=>'filter.png',
-				'subclass'=>'linkobject boxfilter',
-				'target'=>'none'	// Set '' to get target="_blank"
+				'limit' => dol_strlen($text),
+				'graph' => 1,
+				'sublink' => '',
+				'subtext' => $langs->trans("Filter"),
+				'subpicto' => 'filter.png',
+				'subclass' => 'linkobject boxfilter',
+				'target' => 'none'	// Set '' to get target="_blank"
 		);
 
 		$dir = ''; // We don't need a path because image file will not be saved into disk
@@ -122,7 +124,7 @@ class box_graph_orders_permonth extends ModeleBoxes
 			if (empty($endyear)) {
 				$endyear = $nowarray['year'];
 			}
-			$startyear = $endyear - (!getDolGlobalString('MAIN_NB_OF_YEAR_IN_WIDGET_GRAPH') ? 2 : ($conf->global->MAIN_NB_OF_YEAR_IN_WIDGET_GRAPH - 1));
+			$startyear = $endyear - getDolGlobalInt('MAIN_NB_OF_YEAR_IN_WIDGET_GRAPH', 3) + 1;
 
 			$mode = 'customer';
 			$WIDTH = (($shownb && $showtot) || !empty($conf->dol_optimize_smallscreen)) ? '256' : '320';
@@ -237,7 +239,7 @@ class box_graph_orders_permonth extends ModeleBoxes
 				$stringtoshow .= '<input type="checkbox" name="'.$param_showtot.'"'.($showtot ? ' checked' : '').'> '.$langs->trans("AmountOfOrdersByMonthHT");
 				$stringtoshow .= '<br>';
 				$stringtoshow .= $langs->trans("Year").' <input class="flat" size="4" type="text" name="'.$param_year.'" value="'.$endyear.'">';
-				$stringtoshow .= '<input type="image" class="reposition inline-block valigntextbottom" alt="'.$langs->trans("Refresh").'" src="'.img_picto($langs->trans("Refresh"), 'refresh.png', '', '', 1).'">';
+				$stringtoshow .= '<input type="image" class="reposition inline-block valigntextbottom" alt="'.$langs->trans("Refresh").'" src="'.img_picto($langs->trans("Refresh"), 'refresh.png', '', 0, 1).'">';
 				$stringtoshow .= '</form>';
 				$stringtoshow .= '</div>';
 				if ($shownb && $showtot) {
@@ -259,15 +261,15 @@ class box_graph_orders_permonth extends ModeleBoxes
 					$stringtoshow .= '</div>';
 				}
 				$this->info_box_contents[0][0] = array(
-					'tr'=>'class="oddeven nohover"',
+					'tr' => 'class="oddeven nohover"',
 					'td' => 'class="nohover center"',
-					'textnoformat'=>$stringtoshow,
+					'textnoformat' => $stringtoshow,
 				);
 			} else {
 				$this->info_box_contents[0][0] = array(
-					'tr'=>'class="oddeven nohover"',
+					'tr' => 'class="oddeven nohover"',
 					'td' => 'class="nohover left"',
-					'maxlength'=>500,
+					'maxlength' => 500,
 					'text' => $mesg,
 				);
 			}
@@ -282,9 +284,9 @@ class box_graph_orders_permonth extends ModeleBoxes
 	/**
 	 *  Method to show box
 	 *
-	 *  @param	array	$head       Array with properties of box title
-	 *  @param  array	$contents   Array with properties of box lines
-	 *  @param	int		$nooutput	No print, only return string
+	 *	@param	?array{text?:string,sublink?:string,subpicto:?string,nbcol?:int,limit?:int,subclass?:string,graph?:string}	$head	Array with properties of box title
+	 *	@param	?array<array<array{tr?:string,td?:string,target?:string,text?:string,text2?:string,textnoformat?:string,tooltip?:string,logo?:string,url?:string,maxlength?:string}>>	$contents	Array with properties of box lines
+	 *	@param	int<0,1>	$nooutput	No print, only return string
 	 *  @return	string
 	 */
 	public function showBox($head = null, $contents = null, $nooutput = 0)

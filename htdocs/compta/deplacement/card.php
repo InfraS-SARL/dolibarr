@@ -43,15 +43,16 @@ $id = GETPOSTINT('id');
 if ($user->socid) {
 	$socid = $user->socid;
 }
+
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
+$hookmanager->initHooks(array('tripsandexpensescard', 'globalcard'));
+
 $result = restrictedArea($user, 'deplacement', $id, '');
 
 $action = GETPOST('action', 'aZ09');
 $confirm = GETPOST('confirm', 'alpha');
 
 $object = new Deplacement($db);
-
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
-$hookmanager->initHooks(array('tripsandexpensescard', 'globalcard'));
 
 $permissionnote = $user->hasRight('deplacement', 'creer'); // Used by the include of actions_setnotes.inc.php
 
@@ -221,7 +222,7 @@ if ($action == 'create') {
 
 	print "<tr>";
 	print '<td class="fieldrequired">'.$langs->trans("Date").'</td><td>';
-	print $form->selectDate($datec ? $datec : -1, '', '', '', '', 'add', 1, 1);
+	print $form->selectDate($datec ? $datec : -1, '', 0, 0, 0, 'add', 1, 1);
 	print '</td></tr>';
 
 	// Km
@@ -367,7 +368,7 @@ if ($action == 'create') {
 			 * Confirm delete trip
 			 */
 			if ($action == 'delete') {
-				print $form->formconfirm($_SERVER["PHP_SELF"]."?id=".urlencode($id), $langs->trans("DeleteTrip"), $langs->trans("ConfirmDeleteTrip"), "confirm_delete");
+				print $form->formconfirm($_SERVER["PHP_SELF"]."?id=".urlencode((string) ($id)), $langs->trans("DeleteTrip"), $langs->trans("ConfirmDeleteTrip"), "confirm_delete");
 			}
 
 			$soc = new Societe($db);
@@ -451,7 +452,7 @@ if ($action == 'create') {
 			print '<tr><td>'.$langs->trans("Status").'</td><td>'.$object->getLibStatut(4).'</td></tr>';
 
 			// Other attributes
-			$parameters = array('socid'=>$object->id);
+			$parameters = array('socid' => $object->id);
 			include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_view.tpl.php';
 
 			print "</table><br>";

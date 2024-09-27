@@ -1,5 +1,6 @@
 <?php
 /* Copyright (C) 2009 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2024		Frédéric France			<frederic.france@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +30,7 @@
  */
 function printDropdownBookmarksList()
 {
-	global $conf, $user, $db, $langs, $sortfield, $sortorder;
+	global $user, $db, $langs, $sortfield, $sortorder;
 
 	require_once DOL_DOCUMENT_ROOT.'/bookmarks/class/bookmark.class.php';
 	require_once DOL_DOCUMENT_ROOT.'/core/lib/functions.lib.php';
@@ -40,7 +41,7 @@ function printDropdownBookmarksList()
 	$url = $_SERVER["PHP_SELF"];
 	$url_param = array();
 	if (!empty($_SERVER["QUERY_STRING"])) {
-		if (is_array($_GET)) {
+		if (is_array($_GET)) {	// Parse the original GET URL. So we must keep $_GET here.
 			foreach ($_GET as $key => $val) {
 				if (is_array($val)) {
 					foreach ($val as $tmpsubval) {
@@ -93,7 +94,7 @@ function printDropdownBookmarksList()
 			//$urltoadd=DOL_URL_ROOT.'/bookmarks/card.php?action=create&amp;urlsource='.urlencode($url).'&amp;url='.urlencode($url);
 			$urltoadd = DOL_URL_ROOT.'/bookmarks/card.php?action=create&amp;url='.urlencode($url);
 			$newbtn .= '<a class="top-menu-dropdown-link" title="'.$langs->trans('AddThisPageToBookmarks').'" href="'.dol_escape_htmltag($urltoadd).'" >';
-			$newbtn .= img_picto('', 'add', '', false, 0, 0, '', 'paddingright').dol_escape_htmltag($langs->trans('AddThisPageToBookmarks')).'</a>';
+			$newbtn .= img_picto('', 'add', '', 0, 0, 0, '', 'paddingright').dol_escape_htmltag($langs->trans('AddThisPageToBookmarks')).'</a>';
 		}
 	}
 

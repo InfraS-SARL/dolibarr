@@ -4,6 +4,7 @@
  * Copyright (C) 2016-2024  Frédéric France      <frederic.france@free.fr>
  * Copyright (C) 2017      Alexandre Spangaro	<aspangaro@open-dsi.fr>
  * Copyright (C) 2021      Gauthier VERDOL		<gauthier.verdol@atm-consulting.fr>
+ * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +22,7 @@
 
 /**
  *      \file       htdocs/compta/sociales/class/chargesociales.class.php
- *		\ingroup    facture
+ *		\ingroup    invoice
  *		\brief      File for the ChargesSociales class
  */
 require_once DOL_DOCUMENT_ROOT.'/core/class/commonobject.class.php';
@@ -56,14 +57,19 @@ class ChargeSociales extends CommonObject
 	protected $table_ref_field = 'ref';
 
 	/**
-	 * @var integer|string $date_ech
+	 * @var int|string $date_ech
 	 */
 	public $date_ech;
 
-
+	/**
+	 * @var string label
+	 */
 	public $label;
 	public $type;
 	public $type_label;
+	public $type_code;
+	public $type_accountancy_code;
+
 	public $amount;
 	public $paye;
 	/**
@@ -71,21 +77,6 @@ class ChargeSociales extends CommonObject
 	 */
 	public $periode;
 	public $period;
-
-	/**
-	 * @var integer|string date_creation
-	 */
-	public $date_creation;
-
-	/**
-	 * @var integer|string $date_modification
-	 */
-	public $date_modification;
-
-	/**
-	 * @var integer|string $date_validation
-	 */
-	public $date_validation;
 
 	/**
 	 * @deprecated Use label instead
@@ -107,6 +98,9 @@ class ChargeSociales extends CommonObject
 	 */
 	public $paiementtype;
 
+	/**
+	 * @var int ID
+	 */
 	public $mode_reglement_id;
 	public $mode_reglement_code;
 	public $mode_reglement;
@@ -126,6 +120,9 @@ class ChargeSociales extends CommonObject
 	 */
 	public $total;
 
+	/**
+	 * @var float total paid
+	 */
 	public $totalpaid;
 
 
@@ -155,7 +152,7 @@ class ChargeSociales extends CommonObject
 		$sql = "SELECT cs.rowid, cs.date_ech";
 		$sql .= ", cs.libelle as label, cs.fk_type, cs.amount, cs.fk_projet as fk_project, cs.paye, cs.periode as period, cs.import_key";
 		$sql .= ", cs.fk_account, cs.fk_mode_reglement, cs.fk_user, note_public, note_private";
-		$sql .= ", c.libelle as type_label";
+		$sql .= ", c.libelle as type_label, c.code as type_code, c.accountancy_code as type_accountancy_code";
 		$sql .= ', p.code as mode_reglement_code, p.libelle as mode_reglement_libelle';
 		$sql .= " FROM ".MAIN_DB_PREFIX."chargesociales as cs";
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_chargesociales as c ON cs.fk_type = c.id";
@@ -180,6 +177,8 @@ class ChargeSociales extends CommonObject
 				$this->label				= $obj->label;
 				$this->type					= $obj->fk_type;
 				$this->type_label			= $obj->type_label;
+				$this->type_code			= $obj->type_code;
+				$this->type_accountancy_code = $obj->type_accountancy_code;
 				$this->fk_account			= $obj->fk_account;
 				$this->mode_reglement_id = $obj->fk_mode_reglement;
 				$this->mode_reglement_code = $obj->mode_reglement_code;
@@ -192,7 +191,7 @@ class ChargeSociales extends CommonObject
 				$this->paye = $obj->paye;
 				$this->periode = $this->db->jdate($obj->period);
 				$this->period = $this->db->jdate($obj->period);
-				$this->import_key = $this->import_key;
+				$this->import_key = $obj->import_key;
 
 				$this->db->free($resql);
 
@@ -360,13 +359,17 @@ class ChargeSociales extends CommonObject
 		$this->db->begin();
 
 		$sql = "UPDATE ".MAIN_DB_PREFIX."chargesociales";
-		$sql .= " SET libelle='".$this->db->escape($this->label ? $this->label : $this->lib)."'";
-		$sql .= ", date_ech='".$this->db->idate($this->date_ech)."'";
-		$sql .= ", periode='".$this->db->idate($this->periode)."'";
-		$sql .= ", amount='".price2num($this->amount, 'MT')."'";
-		$sql .= ", fk_projet=".($this->fk_project > 0 ? $this->db->escape($this->fk_project) : "NULL");
-		$sql .= ", fk_user=".($this->fk_user > 0 ? $this->db->escape($this->fk_user) : "NULL");
-		$sql .= ", fk_user_modif=".$user->id;
+		$sql .= " SET libelle = '".$this->db->escape($this->label ? $this->label : $this->lib)."'";
+		$sql .= ", date_ech = '".$this->db->idate($this->date_ech)."'";
+		$sql .= ", periode = '".$this->db->idate($this->period ? $this->period : $this->periode)."'";
+		$sql .= ", amount = ".((float) price2num($this->amount, 'MT'));
+		$sql .= ", fk_projet=".($this->fk_project > 0 ? ((int) $this->fk_project) : "NULL");
+		$sql .= ", fk_user=".($this->fk_user > 0 ? ((int) $this->fk_user) : "NULL");
+		$sql .= ", fk_user_modif=".((int) $user->id);
+		if ($this->type > 0) {
+			$sql .= ", fk_type = ".((int) $this->type);
+		}
+		$sql .= ", fk_user_modif=".((int) $user->id);
 		$sql .= " WHERE rowid=".((int) $this->id);
 
 		dol_syslog(get_class($this)."::update", LOG_DEBUG);
@@ -405,8 +408,8 @@ class ChargeSociales extends CommonObject
 	/**
 	 * Calculate amount remaining to pay by year
 	 *
-	 * @param   int     $year       Year
-	 * @return  number
+	 * @param   int			$year       Year
+	 * @return  int|float 	  	        Returns -1 when error (Note: could be mistaken with an amount)
 	 */
 	public function solde($year = 0)
 	{
@@ -414,10 +417,10 @@ class ChargeSociales extends CommonObject
 
 		$sql = "SELECT SUM(f.amount) as amount";
 		$sql .= " FROM ".MAIN_DB_PREFIX."chargesociales as f";
-		$sql .= " WHERE f.entity = ".$conf->entity;
+		$sql .= " WHERE f.entity = ".((int) $conf->entity);
 		$sql .= " AND paye = 0";
 
-		if ($year) {
+		if ($year) {	// TODO Fix to use date function
 			$sql .= " AND f.datev >= '".((int) $year)."-01-01' AND f.datev <= '".((int) $year)."-12-31' ";
 		}
 
@@ -586,7 +589,7 @@ class ChargeSociales extends CommonObject
 	 */
 	public function getNomUrl($withpicto = 0, $option = '', $notooltip = 0, $short = 0, $save_lastsearch_value = -1)
 	{
-		global $langs, $conf, $user, $form, $hookmanager;
+		global $langs, $conf, $user, $hookmanager;
 
 		if (!empty($conf->dol_no_mouse_hover)) {
 			$notooltip = 1; // Force disable tooltips
@@ -627,6 +630,9 @@ class ChargeSociales extends CommonObject
 		}
 		if (!empty($this->type_label)) {
 			$label .= '<br><b>'.$langs->trans('Type').':</b> '.$this->type_label;
+			if (!empty($this->type_accountancy_code)) {
+				$label .= ' <span class="opacitymedium">('.$langs->trans('AccountancyCode').': '.$this->type_accountancy_code.')</span>';
+			}
 		}
 
 		$linkclose = '';
@@ -651,15 +657,17 @@ class ChargeSociales extends CommonObject
 			$result .= $this->ref;
 		}
 		$result .= $linkend;
+
 		global $action;
 		$hookmanager->initHooks(array($this->element . 'dao'));
-		$parameters = array('id'=>$this->id, 'getnomurl' => &$result);
+		$parameters = array('id' => $this->id, 'getnomurl' => &$result);
 		$reshook = $hookmanager->executeHooks('getNomUrl', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
 		if ($reshook > 0) {
 			$result = $hookmanager->resPrint;
 		} else {
 			$result .= $hookmanager->resPrint;
 		}
+
 		return $result;
 	}
 
@@ -759,11 +767,11 @@ class ChargeSociales extends CommonObject
 	}
 
 	/**
-	 *	Return clicable link of object (with eventually picto)
+	 *	Return clickable link of object (with eventually picto)
 	 *
-	 *	@param      string	    $option                 Where point the link (0=> main card, 1,2 => shipment, 'nolink'=>No link)
-	 *  @param		array		$arraydata				Array of data
-	 *  @return		string								HTML Code for Kanban thumb.
+	 *	@param      string	    			$option                 Where point the link (0=> main card, 1,2 => shipment, 'nolink'=>No link)
+	 *  @param		array{string,mixed}		$arraydata				Array of data
+	 *  @return		string											HTML Code for Kanban thumb.
 	 */
 	public function getKanbanView($option = '', $arraydata = null)
 	{

@@ -1,6 +1,7 @@
 <?php
-/* Copyright (C) 2007-2019  Laurent Destailleur     <eldy@users.sourceforge.net>
- * Copyright (C) 2018-2020  Frédéric France         <frederic.france@netlogic.fr>
+/* Copyright (C) 2007-2019	Laurent Destailleur			<eldy@users.sourceforge.net>
+ * Copyright (C) 2018-2020	Frédéric France				<frederic.france@netlogic.fr>
+ * Copyright (C) 2024		Alexandre Spangaro			<alexandre@inovea-conseil.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -71,11 +72,11 @@ if ($cancel) {
 	$action = '';
 }
 
-//include DOL_DOCUMENT_ROOT.'/core/actions_setnotes.inc.php'; // Must be include, not include_once
+//include DOL_DOCUMENT_ROOT.'/core/actions_setnotes.inc.php'; // Must be 'include', not 'include_once'
 
-include DOL_DOCUMENT_ROOT.'/core/actions_dellink.inc.php'; // Must be include, not include_once
+include DOL_DOCUMENT_ROOT.'/core/actions_dellink.inc.php'; // Must be 'include', not 'include_once'
 
-//include DOL_DOCUMENT_ROOT.'/core/actions_lineupdown.inc.php';	// Must be include, not include_once
+//include DOL_DOCUMENT_ROOT.'/core/actions_lineupdown.inc.php';	// Must be 'include', not 'include_once'
 
 
 if ($user->hasRight('adherent', 'cotisation', 'creer') && $action == 'update' && !$cancel) {
@@ -164,8 +165,10 @@ if ($action == 'confirm_delete' && $confirm == 'yes' && $user->hasRight('adheren
 
 $form = new Form($db);
 
+$title = $langs->trans("SubscriptionCard");
 $help_url = 'EN:Module_Foundations|FR:Module_Adh&eacute;rents|ES:M&oacute;dulo_Miembros|DE:Modul_Mitglieder';
-llxHeader('', $langs->trans("SubscriptionCard"), $help_url);
+
+llxHeader('', $title, $help_url, '', 0, 0, '', '', '', 'mod-member page-subscription-card');
 
 
 dol_htmloutput_errors($errmsg);
@@ -238,7 +241,7 @@ if ($user->hasRight('adherent', 'cotisation', 'creer') && $action == 'edit') {
 	// Label
 	print '<tr><td>'.$langs->trans("Label").'</td>';
 	print '<td class="valeur">';
-	print '<input type="text" class="flat" name="note" value="'.$object->note_private.'"></td></tr>';
+	print '<input type="text" class="flat" name="note" value="'.$object->note_public.'"></td></tr>';
 
 	// Bank line
 	if (isModEnabled("bank") && (getDolGlobalString('ADHERENT_BANK_USE') || $object->fk_bank)) {
@@ -334,7 +337,7 @@ if ($rowid && $action != 'edit') {
 	print '<tr><td>'.$langs->trans("Amount").'</td><td class="valeur"><span class="amount">'.price($object->amount).'</span></td></tr>';
 
 	// Label
-	print '<tr><td>'.$langs->trans("Label").'</td><td class="valeur sensiblehtmlcontent">'.dol_string_onlythesehtmltags(dol_htmlentitiesbr($object->note_private)).'</td></tr>';
+	print '<tr><td>'.$langs->trans("Label").'</td><td class="valeur sensiblehtmlcontent">'.dol_string_onlythesehtmltags(dol_htmlentitiesbr($object->note_public)).'</td></tr>';
 
 	// Bank line
 	if (isModEnabled("bank") && (getDolGlobalString('ADHERENT_BANK_USE') || $object->fk_bank)) {
@@ -406,7 +409,7 @@ if ($rowid && $action != 'edit') {
 	/*
 	include_once DOL_DOCUMENT_ROOT . '/core/class/html.formactions.class.php';
 	$formactions = new FormActions($db);
-	$somethingshown = $formactions->showactions($object, $object->element, $socid, 1);
+	$somethingshown = $formactions->showactions($object, $object->element, $socid, 1, '', $MAXEVENT);
 	*/
 
 	print '</div></div>';

@@ -437,7 +437,7 @@ class Translate
 		// Kept for backward compatibility.
 		if (empty($loadfromfileonly)) {
 			$overwritekey = 'MAIN_OVERWRITE_TRANS_' . $this->defaultlang;
-			if (!empty($conf->global->$overwritekey)) {    // Overwrite translation with key1:newstring1,key2:newstring2
+			if (getDolGlobalString($overwritekey)) {    // Overwrite translation with key1:newstring1,key2:newstring2
 				// Overwrite translation with param MAIN_OVERWRITE_TRANS_xx_XX
 				$tmparray = explode(',', getDolGlobalString($overwritekey));
 				foreach ($tmparray as $tmp) {
@@ -676,14 +676,12 @@ class Translate
 	 */
 	public function trans($key, $param1 = '', $param2 = '', $param3 = '', $param4 = '', $maxsize = 0)
 	{
-		global $conf;
-
 		if (!empty($this->tab_translate[$key])) {	// Translation is available
 			$str = $this->tab_translate[$key];
 
 			// Make some string replacement after translation
 			$replacekey = 'MAIN_REPLACE_TRANS_' . $this->defaultlang;
-			if (!empty($conf->global->$replacekey)) {    // Replacement translation variable with string1:newstring1;string2:newstring2
+			if (getDolGlobalString($replacekey)) {    // Replacement translation variable with string1:newstring1;string2:newstring2
 				$tmparray = explode(';', getDolGlobalString($replacekey));
 				foreach ($tmparray as $tmp) {
 					$tmparray2 = explode(':', $tmp);
@@ -701,6 +699,7 @@ class Translate
 
 			if (strpos($key, 'Format') !== 0) {
 				try {
+					// @phan-suppress-next-line PhanPluginPrintfVariableFormatString
 					$str = sprintf($str, $param1, $param2, $param3, $param4); // Replace %s and %d except for FormatXXX strings.
 				} catch (Exception $e) {
 					// No exception managed
@@ -727,7 +726,6 @@ class Translate
 
 			return $str;
 		} else { // Translation is not available
-			//if ($key[0] == '$') { return dol_eval($key, 1, 1, '1'); }
 			return $this->getTradFromKey($key);
 		}
 	}
@@ -777,7 +775,7 @@ class Translate
 
 			// Make some string replacement after translation
 			$replacekey = 'MAIN_REPLACE_TRANS_' . $this->defaultlang;
-			if (!empty($conf->global->$replacekey)) {    // Replacement translation variable with string1:newstring1;string2:newstring2
+			if (getDolGlobalString($replacekey)) {    // Replacement translation variable with string1:newstring1;string2:newstring2
 				$tmparray = explode(';', getDolGlobalString($replacekey));
 				foreach ($tmparray as $tmp) {
 					$tmparray2 = explode(':', $tmp);
@@ -787,6 +785,7 @@ class Translate
 
 			if (!preg_match('/^Format/', $key)) {
 				//print $str;
+				// @phan-suppress-next-line PhanPluginPrintfVariableFormatString
 				$str = sprintf($str, $param1, $param2, $param3, $param4, $param5); // Replace %s and %d except for FormatXXX strings.
 			}
 
@@ -796,9 +795,6 @@ class Translate
 
 			return $str;
 		} else {
-			/*if ($key[0] == '$') {
-				return dol_eval($key, 1, 1, '1');
-			}*/
 			return $this->getTradFromKey($key);
 		}
 	}
@@ -814,7 +810,7 @@ class Translate
 	 */
 	public function transcountry($str, $countrycode)
 	{
-		$strLocaleKey=$str.$countrycode;
+		$strLocaleKey = $str.$countrycode;
 		if (!empty($this->tab_translate[$strLocaleKey])) {
 			return $this->trans($strLocaleKey);
 		} else {
@@ -833,7 +829,7 @@ class Translate
 	 */
 	public function transcountrynoentities($str, $countrycode)
 	{
-		$strLocaleKey=$str.$countrycode;
+		$strLocaleKey = $str.$countrycode;
 		if (!empty($this->tab_translate[$strLocaleKey])) {
 			return $this->transnoentities($strLocaleKey);
 		} else {
@@ -1029,7 +1025,7 @@ class Translate
 	 * 		@param	string	$fieldlabel		Field for label. This value must always be a hardcoded string and not a value coming from user input.
 	 *      @param	string	$keyforselect	Use another value than the translation key for the where into select
 	 *      @param  int		$filteronentity	Use a filter on entity
-	 *      @return string|int				Label in UTF8 (but without entities) or -1 if error
+	 *      @return string|int				Label in UTF8 (not HTML entity encoded) or -1 if error
 	 *      @see dol_getIdFromCode()
 	 */
 	public function getLabelFromKey($db, $key, $tablename, $fieldkey, $fieldlabel, $keyforselect = '', $filteronentity = 0)
